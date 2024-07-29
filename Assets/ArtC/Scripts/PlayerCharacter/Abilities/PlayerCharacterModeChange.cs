@@ -5,7 +5,7 @@ using UnityEngine;
 namespace ArtC.PlayerCharacter.Abilities {
     public class PlayerCharacterModeChange : PlayerCharacterAbilityBase {
         private void Update() {
-            if (Input.GetKeyDown(KeyCode.Space) &&
+            if (Input.GetMouseButtonDown(1) &&
                 GameManager.Instance.GameStateMachine.CurrentState == GameStates.InGameState.InGame) {
                 ModeChange();
             }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using ArtC.Bless;
+using ArtC.PlayerCharacter;
 using ArtC.Utils;
 using R3;
 using UnityEngine;
@@ -14,8 +15,12 @@ namespace ArtC.Systems {
         [SerializeField] private DeadLine.DeadLine _deadLine;
         [SerializeField] private List<BlessCard> _blessCards;
 
-        [Header("パラメーター")] [SerializeField] private BlessWeights _blessWeights;
+        [Header("パラメーター")]
+        [SerializeField] private BlessWeights _blessWeights;
         [SerializeField] private float _phaseDurationSeconds = 10f;
+        [SerializeField] private ShootParamEnhanceCurves _friendEnhanceParams = new();
+
+        [Header("デバッグ")] [SerializeField] private bool _isBlessActive = true;
 
         private StateMachine<GameStates.PlayerMode> _playerModeStateMachine;
         private StateMachine<GameStates.InGameState> _gameStateMachine;
@@ -26,6 +31,7 @@ namespace ArtC.Systems {
         private readonly ReactiveProperty<GameStates.Phase> _inGamePhase = new(GameStates.Phase.Bachelor1_1Q);
         private readonly ReactiveProperty<float> _phaseElapsedSeconds = new(0f);
 
+        public readonly ShootParams FriendShootParams = new();
         public readonly Subject<BlessTypes> SelectedBlessType = new();
 
 #endregion
@@ -43,6 +49,7 @@ namespace ArtC.Systems {
         public DeadLine.DeadLine DeadLine => _deadLine;
         public float PhaseDurationSeconds => _phaseDurationSeconds;
         public BlessWeights BlessWeights => _blessWeights;
+        public ShootParamEnhanceCurves FriendEnhanceParams => _friendEnhanceParams;
 
 #endregion
 
@@ -70,7 +77,13 @@ namespace ArtC.Systems {
                 .Where(seconds => seconds >= _phaseDurationSeconds)
                 .Subscribe(_ => { TransitPhase(); }).AddTo(this);
 
-            _inGamePhase.Subscribe(_ => { StartBlessing(); }).AddTo(this);
+            _inGamePhase.Subscribe(_ => {
+                if (!_isBlessActive) {
+                    return;
+                }
+
+                StartBlessing();
+            }).AddTo(this);
 
             SelectedBlessType.Subscribe(type => {
                 if (type == BlessTypes.None) {
@@ -96,6 +109,10 @@ namespace ArtC.Systems {
                             throw new ArgumentOutOfRangeException();
                     }
                 }).AddTo(this);
+
+            _inGamePhase.Subscribe(phase => {
+                EnhanceFriendShootParams(phase);
+            }).AddTo(this);
         }
 
         private void OnDestroy() {
@@ -108,7 +125,7 @@ namespace ArtC.Systems {
                 _stoneModeElapsedSeconds.Value += Time.deltaTime;
             }
 
-            if (_gameStateMachine.CurrentState is GameStates.InGameState.Result && Input.GetKeyDown(KeyCode.R)) {
+            if (_gameStateMachine.CurrentState is GameStates.InGameState.Result && Input.GetMouseButtonDown(1)) {
                 Restart();
             }
         }
@@ -132,6 +149,33 @@ namespace ArtC.Systems {
             _playerModeStateMachine = new StateMachine<GameStates.PlayerMode>(gameObject, GameStates.PlayerMode.Normal);
             _gameStateMachine = new StateMachine<GameStates.InGameState>(gameObject, GameStates.InGameState.Title);
             _blessGacha.Constructor(_blessWeights.Weights);
+
+            FriendShootParams.ShootDirectionCount =
+                _friendEnhanceParams.GetValue(BlessTypes.ShootDirectionCount, 0).ToRoundInt();
+            FriendShootParams.ShootAngleRange = _friendEnhanceParams.GetValue(BlessTypes.ShootAngleRange, 0);
+            FriendShootParams.ShootInterval = _friendEnhanceParams.GetValue(BlessTypes.ShootInterval, 0);
+            FriendShootParams.ProjectilePenetrateCount =
+                _friendEnhanceParams.GetValue(BlessTypes.Penetration, 0).ToRoundInt();
+            FriendShootParams.ProjectileDamageValue = _friendEnhanceParams.GetValue(BlessTypes.ProjectileDamage, 0);
+            FriendShootParams.ProjectileSpeed = _friendEnhanceParams.GetValue(BlessTypes.ProjectileSpeed, 0);
+            FriendShootParams.ProjectileSize = _friendEnhanceParams.GetValue(BlessTypes.ProjectileSize, 0);
+            FriendShootParams.ProjectileLifeTimeSeconds =
+                _friendEnhanceParams.GetValue(BlessTypes.ProjectileLifeTimeSeconds, 0);
+        }
+
+        private void EnhanceFriendShootParams(GameStates.Phase phase) {
+            var count = (int)phase - 1;
+            FriendShootParams.ShootDirectionCount =
+                _friendEnhanceParams.GetValue(BlessTypes.ShootDirectionCount, count).ToRoundInt();
+            FriendShootParams.ShootAngleRange = _friendEnhanceParams.GetValue(BlessTypes.ShootAngleRange, count);
+            FriendShootParams.ShootInterval = _friendEnhanceParams.GetValue(BlessTypes.ShootInterval, count);
+            FriendShootParams.ProjectilePenetrateCount =
+                _friendEnhanceParams.GetValue(BlessTypes.Penetration, count).ToRoundInt();
+            FriendShootParams.ProjectileDamageValue = _friendEnhanceParams.GetValue(BlessTypes.ProjectileDamage, count);
+            FriendShootParams.ProjectileSpeed = _friendEnhanceParams.GetValue(BlessTypes.ProjectileSpeed, count);
+            FriendShootParams.ProjectileSize = _friendEnhanceParams.GetValue(BlessTypes.ProjectileSize, count);
+            FriendShootParams.ProjectileLifeTimeSeconds =
+                _friendEnhanceParams.GetValue(BlessTypes.ProjectileLifeTimeSeconds, count);
         }
 
         private void TransitPhase() {

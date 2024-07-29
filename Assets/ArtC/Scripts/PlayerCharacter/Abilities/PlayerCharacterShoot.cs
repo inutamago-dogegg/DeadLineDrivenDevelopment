@@ -66,6 +66,8 @@ namespace ArtC.PlayerCharacter.Abilities {
 
         public ReadOnlyReactiveProperty<int> ProjectileLifeTimeSecondsBlessCount =>
             _projectileLifeTimeSecondsBlessCount;
+        public ShootParams BasicShootParams => _basicShootParams;
+        public ShootParams BlessedShootParams => _blessedShootParams;
 
 #endregion
 
@@ -111,8 +113,14 @@ namespace ArtC.PlayerCharacter.Abilities {
                 }
             }).AddTo(this);
 
-            GameManager.Instance.InGamePhase.Subscribe(phase => { EnhanceBasicParams(phase); }).AddTo(this);
-            GameManager.Instance.SelectedBlessType.Subscribe(bless => { ApplyBless(bless); }).AddTo(this);
+            GameManager.Instance.InGamePhase.Subscribe(phase => {
+                EnhanceBasicParams(phase);
+
+            }).AddTo(this);
+            GameManager.Instance.SelectedBlessType.Subscribe(bless => {
+                ApplyBless(bless);
+                ApplyShootParams();
+            }).AddTo(this);
         }
 
         private void Update() {
@@ -183,50 +191,48 @@ namespace ArtC.PlayerCharacter.Abilities {
                     break;
                 case BlessTypes.ShootDirectionCount:
                     _shootDirectionCountBlessCount.Value++;
-                    _basicShootParams.ShootDirectionCount = _blessCurves
+                    _blessedShootParams.ShootDirectionCount = _blessCurves
                         .GetValue(blessType, _shootDirectionCountBlessCount.Value).ToRoundInt();
                     break;
                 case BlessTypes.ShootAngleRange:
                     _shootAngleRangeBlessCount.Value++;
-                    _basicShootParams.ShootAngleRange =
+                    _blessedShootParams.ShootAngleRange =
                         _blessCurves.GetValue(blessType, _shootAngleRangeBlessCount.Value);
                     break;
                 case BlessTypes.ShootInterval:
                     _shootIntervalSecondsBlessCount.Value++;
-                    _basicShootParams.ShootInterval =
+                    _blessedShootParams.ShootInterval =
                         _blessCurves.GetValue(blessType, _shootIntervalSecondsBlessCount.Value);
                     break;
                 case BlessTypes.Penetration:
                     _projectilePenetrateCountBlessCount.Value++;
-                    _basicShootParams.ProjectilePenetrateCount = _blessCurves
+                    _blessedShootParams.ProjectilePenetrateCount = _blessCurves
                         .GetValue(blessType, _projectilePenetrateCountBlessCount.Value).ToRoundInt();
                     break;
                 case BlessTypes.ProjectileDamage:
                     _projectileDamageValueBlessCount.Value++;
-                    _basicShootParams.ProjectileDamageValue =
+                    _blessedShootParams.ProjectileDamageValue =
                         _blessCurves.GetValue(blessType, _projectileDamageValueBlessCount.Value);
                     break;
                 case BlessTypes.ProjectileSpeed:
                     _projectileSpeedBlessCount.Value++;
-                    _basicShootParams.ProjectileSpeed =
+                    _blessedShootParams.ProjectileSpeed =
                         _blessCurves.GetValue(blessType, _projectileSpeedBlessCount.Value);
                     break;
                 case BlessTypes.ProjectileSize:
                     _projectileSizeBlessCount.Value++;
-                    _basicShootParams.ProjectileSize =
+                    _blessedShootParams.ProjectileSize =
                         _blessCurves.GetValue(blessType, _projectileSizeBlessCount.Value);
                     break;
                 case BlessTypes.ProjectileLifeTimeSeconds:
                     _projectileLifeTimeSecondsBlessCount.Value++;
-                    _basicShootParams.ProjectileLifeTimeSeconds =
+                    _blessedShootParams.ProjectileLifeTimeSeconds =
                         _blessCurves.GetValue(blessType, _projectileLifeTimeSecondsBlessCount.Value);
                     break;
                 default:
                     Debug.LogError("未対応のBlessTypeです: " + blessType);
                     break;
             }
-
-            ApplyShootParams();
         }
 
         private void ShootProcess(float deltaTime) {

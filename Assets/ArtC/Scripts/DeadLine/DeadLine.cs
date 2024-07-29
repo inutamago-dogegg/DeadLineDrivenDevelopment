@@ -13,9 +13,9 @@ namespace ArtC.DeadLine {
         private ReactiveProperty<float> _currentHitPoint;
 
         public DamageApplicableTypes DamageApplicableType => DamageApplicableTypes.DeadLine;
-        private bool IsExistingAttackerInArea => _tasksInArea.Count > 0;
         public ReadOnlyReactiveProperty<float> CurrentHitPoint => _currentHitPoint;
         public float MaxHitPoint => _maxHitPoint;
+        public bool IsExistingAttackerInArea => _tasksInArea.Count > 0;
 
         private void Awake() {
             _currentHitPoint = new ReactiveProperty<float>(_maxHitPoint);

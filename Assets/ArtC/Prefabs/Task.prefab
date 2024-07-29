@@ -373,7 +373,7 @@ MonoBehaviour:
   _currentDirection: {x: 0, y: 0}
   _maxSpeed: 10
   _stopThreshold: 0.3
-  _accelerateMultiplier: 0.4
+  _accelerateMultiplier: 0.2
 --- !u!50 &276908743550984010
 Rigidbody2D:
   serializedVersion: 4

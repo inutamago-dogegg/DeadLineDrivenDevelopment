@@ -8,6 +8,9 @@ namespace ArtC.GUI {
     public class PlayerModeDisplay : MonoBehaviour {
         [SerializeField] private TMP_Text _playerModeText;
         [SerializeField] private GameObject _onlyInStoneModeObjectsParent;
+        [SerializeField] private TMP_Text _ignoreDeadLineText;
+
+        private DeadLine.DeadLine _deadLine;
 
         private void Awake() {
             _playerModeText.text = $"{GameStates.PlayerMode.Normal.ToJapanese()}";
@@ -24,6 +27,12 @@ namespace ArtC.GUI {
                 var isStoneMode = pair.next is GameStates.PlayerMode.Stone;
                 _onlyInStoneModeObjectsParent.SetActive(isStoneMode);
             }).AddTo(this);
+
+            _deadLine = GameManager.Instance.DeadLine;
+        }
+
+        private void Update() {
+            _ignoreDeadLineText.gameObject.SetActive(_deadLine.IsExistingAttackerInArea);
         }
     }
 }
